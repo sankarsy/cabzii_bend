@@ -9,15 +9,22 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+// app.use(cors());
+
+app.use(cors({
+  origin: [process.env.FRONTEND_URL],
+  credentials: true
+}));
+
 
 // ✅ Make 'uploads' folder public
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Use full path routes inside files
-app.use(userRoute);
-app.use(carRoute);
-app.use(travelRoutes);
+app.use("/api", userRoute);
+// app.use(carRoute);
+app.use("/api", carRoute); // Now all endpoints start with /api
+app.use("/api", travelRoutes);
 
 // MongoDB connection
 const URI = process.env.MONGODB_URI;
