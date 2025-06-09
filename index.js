@@ -11,11 +11,25 @@ const app = express();
 app.use(express.json());
 // app.use(cors());
 
-app.use(cors({
-  origin: [process.env.FRONTEND_URL],
-  credentials: true
-}));
-
+// app.use(cors({
+//   origin: [process.env.FRONTEND_URL],
+//   credentials: true
+// }));
+// ✅ Enable CORS for frontend domains
+// ✅ Allow frontend + admin panel
+app.use(
+  cors({
+    origin: [
+      "http://localhost:8000",         // local dev
+      "https://cabzii.in",             // user frontend
+      "https://www.cabzii.in",         // www version
+      "https://admin.cabzii.in",       // admin panel ✅
+      "https://www.admin.cabzii.in",       // admin panel ✅
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 // ✅ Make 'uploads' folder public
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
