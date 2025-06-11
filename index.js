@@ -20,11 +20,13 @@ app.use(express.json());
 // CORS Configuration
 const corsOptions = {
   origin: [
-    "http://localhost:8000", // Local development
-    "https://cabzii.in", // Production frontend
-    "https://www.cabzii.in", // Production frontend (www)
-    "https://admin.cabzii.in", // Admin panel
-    "https://www.admin.cabzii.in", // Admin panel (www)
+    "http://localhost:3000", // ✅ Local React frontend
+    "http://localhost:3001", // ✅ Local React frontend
+    "http://localhost:8000", // Local API or Admin if needed
+    "https://cabzii.in",
+    "https://www.cabzii.in",
+    "https://admin.cabzii.in",
+    "https://www.admin.cabzii.in",
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
