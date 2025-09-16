@@ -6,6 +6,7 @@ const carSchema = new mongoose.Schema({
   carimage: { type: String },
   distance: { type: String },
   price: { type: String },
+  hour: { type: String }, // ✅ New field added here
   offerprice: { type: String },
   offerpercentage: { type: String },
   description: { type: String },
@@ -14,3 +15,5 @@ const carSchema = new mongoose.Schema({
 
 const Car = mongoose.model("Car", carSchema);
 module.exports = Car;
+// This schema defines the structure of a car document in the MongoDB database.
+// It includes fields for car ID, name, image, distance, price, hourly rate, offer price, offer percentage, description, and SEO title.

@@ -10,13 +10,31 @@ const getCars = async (req, res) => {
   }
 };
 
-// Create car
+// Get a single car by carid
+const getCarById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const car = await Car.findOne({ carid: id }); // using carid (not _id)
+
+    if (!car) {
+      return res.status(404).json({ message: "Car not found" });
+    }
+
+    res.json(car);
+  } catch (error) {
+    console.error("Error fetching car:", error);
+    res.status(500).json({ message: "Error fetching car", error });
+  }
+};
+
+// Create new car
 const createCar = async (req, res) => {
   try {
     const {
       carid,
       carname,
       price,
+      hour,
       distance,
       description,
       offerprice,
@@ -30,6 +48,7 @@ const createCar = async (req, res) => {
       carid,
       carname,
       price,
+      hour,
       distance,
       description,
       offerprice,
@@ -45,17 +64,22 @@ const createCar = async (req, res) => {
   }
 };
 
-
+// Update car
 const updateCar = async (req, res) => {
   try {
-    console.log("Update request params:", req.params);
-    console.log("Update request body:", req.body);
-    console.log("Update request file:", req.file);
-
     const car = await Car.findById(req.params.id);
     if (!car) return res.status(404).json({ message: "Car not found" });
 
-    const fields = ["carname", "price", "distance", "description", "offerprice", "offerpercentage", "seoTitle"];
+    const fields = [
+      "carname",
+      "price",
+      "hour",
+      "distance",
+      "description",
+      "offerprice",
+      "offerpercentage",
+      "seoTitle",
+    ];
 
     fields.forEach((field) => {
       if (req.body[field] !== undefined) {
@@ -79,11 +103,10 @@ const updateCar = async (req, res) => {
   }
 };
 
-
 // Delete car
 const deleteCar = async (req, res) => {
   try {
-    const deletedCar = await Car.findByIdAndDelete(req.params.id); // ✅ Use _id
+    const deletedCar = await Car.findByIdAndDelete(req.params.id);
     if (!deletedCar) return res.status(404).json({ message: "Car not found" });
     res.json({ message: "Car deleted successfully" });
   } catch (error) {
@@ -93,6 +116,7 @@ const deleteCar = async (req, res) => {
 
 module.exports = {
   getCars,
+  getCarById,
   createCar,
   updateCar,
   deleteCar,
