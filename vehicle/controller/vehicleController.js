@@ -1,7 +1,7 @@
 const fs = require("fs");
 const Vehicle = require("../model/vehicleSchema");
 
-// Auto-generate Vehicle ID
+// -------------------- Helper: Generate Vehicle ID --------------------
 const generateVehicleId = async () => {
   const prefix = "VH";
   const count = await Vehicle.countDocuments();
@@ -9,14 +9,14 @@ const generateVehicleId = async () => {
   return `${prefix}${padded}`;
 };
 
-// 📌 Create Vehicle
+// -------------------- CREATE VEHICLE --------------------
 const createVehicle = async (req, res) => {
   try {
     const { name, type, seoDescription, seoTitle } = req.body;
     const _id = await generateVehicleId();
 
+    // Accept up to 3 images
     const imagePaths = req.files?.map((file) => `/uploads/${file.filename}`) || [];
-
     if (imagePaths.length > 3) {
       return res.status(400).json({ error: "You can upload up to 3 images only." });
     }
@@ -26,21 +26,23 @@ const createVehicle = async (req, res) => {
       name,
       type,
       images: imagePaths,
-      seoDescription,
-      seoTitle,
+      seoTitle: seoTitle || `${name} - Cabzii`,
+      seoDescription: seoDescription || `Book ${name} cab online. Choose from packages for hours or kms.`,
       packages: [],
     });
 
     await newVehicle.save();
-    res.status(201).json({ message: "Vehicle created", vehicle: newVehicle });
+
+    res.status(201).json({
+      message: "Vehicle created",
+      vehicle: formatVehicleForSEO(newVehicle),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
-
-// 📌 Update Vehicle
+// -------------------- UPDATE VEHICLE --------------------
 const updateVehicle = async (req, res) => {
   try {
     const { id } = req.params;
@@ -50,40 +52,31 @@ const updateVehicle = async (req, res) => {
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
 
     const newImages = req.files?.map((file) => `/uploads/${file.filename}`) || [];
-    const total = vehicle.images.length + newImages.length;
-
-    if (total > 3) {
+    const totalImages = vehicle.images.length + newImages.length;
+    if (totalImages > 3) {
       return res.status(400).json({ error: "Total images cannot exceed 3." });
     }
+    if (newImages.length > 0) vehicle.images.push(...newImages);
 
-    if (newImages.length > 0) {
-      vehicle.images.push(...newImages);
-    }
-
-    // Update fields if provided
-    const fields = ["name", "type", "seoTitle", "seoDescription"];
-    fields.forEach((field) => {
-      if (updates[field] !== undefined) {
-        vehicle[field] = updates[field];
-      }
+    ["name", "type", "seoTitle", "seoDescription"].forEach((field) => {
+      if (updates[field] !== undefined) vehicle[field] = updates[field];
     });
 
     await vehicle.save();
-    res.json({ message: "Vehicle updated", vehicle });
+    res.json({ message: "Vehicle updated", vehicle: formatVehicleForSEO(vehicle) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
-// 📌 Delete Vehicle
+// -------------------- DELETE VEHICLE --------------------
 const deleteVehicle = async (req, res) => {
   try {
     const { id } = req.params;
     const vehicle = await Vehicle.findById(id);
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
 
-    // Delete associated images
+    // Delete images
     vehicle.images.forEach((img) => {
       const fullPath = `.${img}`;
       fs.unlink(fullPath, (err) => {
@@ -98,7 +91,7 @@ const deleteVehicle = async (req, res) => {
   }
 };
 
-// 📌 Add Package
+// -------------------- ADD PACKAGE --------------------
 const addPackage = async (req, res) => {
   try {
     const { vehicleId } = req.params;
@@ -111,7 +104,6 @@ const addPackage = async (req, res) => {
       if (!pkg._id || !pkg._id.startsWith("PK")) {
         return res.status(400).json({ error: "Each Package ID must start with 'PK'" });
       }
-
       const exists = vehicle.packages.find((p) => p._id === pkg._id);
       if (exists) return res.status(400).json({ error: `Package ID ${pkg._id} already exists` });
 
@@ -119,23 +111,13 @@ const addPackage = async (req, res) => {
     }
 
     await vehicle.save();
-    res.status(200).json({ message: "Package(s) added", vehicle });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-// 📌 Get All Vehicles with Packages
-const getAllVehicles = async (req, res) => {
-  try {
-    const vehicles = await Vehicle.find();
-    res.status(200).json(vehicles);
+    res.status(200).json({ message: "Package(s) added", vehicle: formatVehicleForSEO(vehicle) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
-// 📌 Update Package
+// -------------------- UPDATE PACKAGE --------------------
 const updatePackage = async (req, res) => {
   try {
     const { vehicleId, packageId } = req.params;
@@ -147,14 +129,13 @@ const updatePackage = async (req, res) => {
 
     Object.assign(pkg, req.body);
     await vehicle.save();
-
-    res.json({ message: "Package updated", vehicle });
+    res.json({ message: "Package updated", vehicle: formatVehicleForSEO(vehicle) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 📌 Delete Package
+// -------------------- DELETE PACKAGE --------------------
 const deletePackage = async (req, res) => {
   try {
     const { vehicleId, packageId } = req.params;
@@ -163,19 +144,17 @@ const deletePackage = async (req, res) => {
 
     vehicle.packages = vehicle.packages.filter((p) => p._id !== packageId);
     await vehicle.save();
-
-    res.json({ message: "Package deleted" });
+    res.json({ message: "Package deleted", vehicle: formatVehicleForSEO(vehicle) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 📌 Delete one image from vehicle
+// -------------------- DELETE SINGLE IMAGE --------------------
 const deleteImage = async (req, res) => {
   try {
     const { vehicleId } = req.params;
     const { imagePath } = req.body;
-
     const vehicle = await Vehicle.findById(vehicleId);
     if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
 
@@ -197,26 +176,67 @@ const deleteImage = async (req, res) => {
   }
 };
 
-
-// 📌 Get Vehicle by ID
-const getVehicleById = async (req, res) => {
+// -------------------- GET ALL VEHICLES (SEO-READY) --------------------
+const getAllVehicles = async (req, res) => {
   try {
-    const { id } = req.params;
-    const vehicle = await Vehicle.findOne({ _id: id }); // ✅ custom string ID
-
-    if (!vehicle) {
-      return res.status(404).json({ error: "Vehicle not found" });
-    }
-
-    res.status(200).json(vehicle);
+    const vehicles = await Vehicle.find();
+    const seoVehicles = vehicles.map(formatVehicleForSEO);
+    res.status(200).json(seoVehicles);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+// -------------------- GET VEHICLE BY ID --------------------
+const getVehicleById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
 
+    res.status(200).json(formatVehicleForSEO(vehicle));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
-// ✅ Export all controller functions
+// -------------------- GET VEHICLE BY SLUG --------------------
+const getVehicleBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const vehicle = await Vehicle.findOne({ slug });
+    if (!vehicle) return res.status(404).json({ error: "Vehicle not found" });
+
+    res.status(200).json(formatVehicleForSEO(vehicle));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// -------------------- Helper: Format Vehicle for SEO --------------------
+const formatVehicleForSEO = (vehicle) => {
+  return {
+    _id: vehicle._id,
+    name: vehicle.name,
+    type: vehicle.type,
+    images: vehicle.images,
+    slug: vehicle.slug,
+    seoTitle: vehicle.seoTitle,
+    seoDescription: vehicle.seoDescription,
+    packages: vehicle.packages.map((pkg) => ({
+      _id: pkg._id,
+      title: pkg.title,
+      duration: pkg.duration,
+      distance: pkg.distance,
+      price: pkg.price,
+      offerPrice: pkg.offerPrice,
+      discount: pkg.discount,
+      slug: pkg.slug,
+    })),
+  };
+};
+
+// -------------------- EXPORT --------------------
 module.exports = {
   createVehicle,
   updateVehicle,
@@ -225,6 +245,7 @@ module.exports = {
   updatePackage,
   deletePackage,
   deleteImage,
-  getAllVehicles, // ✅ Export new function
-  getVehicleById, // ✅ new export
+  getAllVehicles,
+  getVehicleById,
+  getVehicleBySlug,
 };

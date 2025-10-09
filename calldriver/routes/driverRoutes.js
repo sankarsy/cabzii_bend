@@ -6,6 +6,7 @@ const {
   createVehicleCategory,
   getAllCategories,
   getCategoryById,
+  getCategoryBySlug,          // ✅ new
   updateVehicleCategory,
   deleteVehicleCategory,
   addPackageToCategory,
@@ -13,6 +14,7 @@ const {
   deletePackageFromCategory,
   getAllPackagesFromCategory,
   getPackageById,
+  getPackageBySlug,           // ✅ new
 } = require("../controller/driverController");
 
 // ================= VEHICLE CATEGORY ROUTES =================
@@ -25,6 +27,9 @@ router.get("/getAll", getAllCategories);
 
 // Get single category by ID
 router.get("/get/:id", getCategoryById);
+
+// Get category by slug (SEO)
+router.get("/getBySlug/:slug", getCategoryBySlug);
 
 // Update category (image upload optional)
 router.put("/update/:id", upload.array("categoryImage", 3), updateVehicleCategory);
@@ -42,6 +47,9 @@ router.get("/categories/:categoryId/allpackages", getAllPackagesFromCategory);
 
 // Get single package by ID
 router.get("/categories/:categoryId/packages/:packageId", getPackageById);
+
+// Get package by slug (SEO)
+router.get("/categories/:categorySlug/packages/:packageSlug", getPackageBySlug);
 
 // Update package
 router.put("/categories/:categoryId/packages/update/:packageId", updatePackageInCategory);
