@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 
 // Routes
+
 const adminRoute = require("./admin/routes/userRoutes");
 const clientRoute = require("./client/routes/clienRoutes");
 const TourBookingsRoute = require("./client/routes/TourbookingRoutes");
@@ -22,7 +23,7 @@ const driverBookingRoutes = require("./client/routes/DriverRoutes");
 const vehicleBookingRoutes = require("./client/routes/vehicleBookingRoutes");
 
 // Upload Config
-const upload = require("./storageconfig/multer");
+const upload = require("./storageconfig/StorageFile");
 
 const app = express();
 
