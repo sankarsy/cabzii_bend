@@ -8,6 +8,18 @@ const generateSubTourId = async () => {
   return `SUBTOUR${String(count + 1).padStart(4, "0")}`;
 };
 
+// ---------------- Helper to delete file safely ----------------
+const deleteFile = (filePath) => {
+  if (!filePath) return;
+  const absolutePath = path.join(__dirname, "..", filePath.replace(/^\/+/, "")); // remove leading slashes
+
+  fs.unlink(absolutePath, (err) => {
+    if (err && err.code !== "ENOENT") {
+      console.error("Error deleting file:", absolutePath, err);
+    }
+  });
+};
+
 // ---------------- CREATE SUBTOUR ----------------
 const createSubTour = async (req, res) => {
   try {
@@ -37,9 +49,7 @@ const updateSubTour = async (req, res) => {
     // Handle image replacement
     if (req.file) {
       if (subTour.image) {
-        fs.unlink(path.join(".", subTour.image), (err) => {
-          if (err && err.code !== "ENOENT") console.error(err);
-        });
+        deleteFile(subTour.image);
       }
       subTour.image = `/uploads/${req.file.filename}`;
     }
@@ -54,7 +64,9 @@ const updateSubTour = async (req, res) => {
       "seoTitle",
       "seoDescription",
       "isActive",
+      "slug", // optional (add if needed)
     ];
+
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) subTour[field] = req.body[field];
     });
@@ -76,9 +88,7 @@ const deleteSubTour = async (req, res) => {
     if (!subTour) return res.status(404).json({ message: "Sub-tour not found" });
 
     if (subTour.image) {
-      fs.unlink(path.join(".", subTour.image), (err) => {
-        if (err && err.code !== "ENOENT") console.error(err);
-      });
+      deleteFile(subTour.image);
     }
 
     await SubTour.findByIdAndDelete(req.params.id);

@@ -3,7 +3,7 @@ const path = require("path");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, path.join(__dirname, "../uploads"));
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
@@ -11,17 +11,15 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|webp/;
-  const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mime = allowedTypes.test(file.mimetype);
+  const allowed = /jpeg|jpg|png|webp/;
+  const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+  const mime = allowed.test(file.mimetype);
   if (ext && mime) cb(null, true);
-  else cb(new Error("Only image files are allowed"), false);
+  else cb(new Error("Only JPG, PNG, WEBP allowed"), false);
 };
 
-const upload = multer({
+module.exports = multer({
   storage,
   fileFilter,
-  limits: { files: 3 }, // Max 3
+  limits: { files: 3 },
 });
-
-module.exports = upload;

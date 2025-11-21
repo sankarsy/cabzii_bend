@@ -1,104 +1,86 @@
-// 1️⃣ Load environment variables at the very top
-require('dotenv').config();
+// Load env
+require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
 
-// 2️⃣ Routes
-
-// Admin routes
+// Routes
 const adminRoute = require("./admin/routes/userRoutes");
-
-// Client routes
 const clientRoute = require("./client/routes/clienRoutes");
-
-// TourBookings routes
 const TourBookingsRoute = require("./client/routes/TourbookingRoutes");
-
-// Tour package routes
 const tourRoutes = require("./TourPackage/routes/TourRoutes");
-
-//Tour Package List
-const tourPackageListRoutes = require("./TourPackage/routes/TourPackageListRoutes")
-
-// Vehicle routes
+const tourPackageListRoutes = require("./TourPackage/routes/TourPackageListRoutes");
 const VehicleRoutes = require("./vehicle/routes/vehicleRoutes");
-
-//driver routes
 const DriverRoutes = require("./calldriver/routes/driverRoutes");
-
-//cab routes
 const cabRoutes = require("./cabservice/routes/cabRoutes");
 
+// Client booking routes
+const cabRentalRoutes = require("./client/routes/cabRentalRoutes");
+const driverBookingRoutes = require("./client/routes/DriverRoutes");
+const vehicleBookingRoutes = require("./client/routes/vehicleBookingRoutes");
+
+// Upload Config
+const upload = require("./storageconfig/multer");
+
 const app = express();
-//sankarsv
-// 3️⃣ Middleware
-app.use(express.json());
 
-// CORS configuration
-const corsOptions = {
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:8000",
-    "https://cabzii.in",
-    "https://www.cabzii.in",
-    "https://admin.cabzii.in",
-    "https://www.admin.cabzii.in",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
-};
+// JSON middleware
+app.use(express.json({ limit: "10mb" }));
 
-app.use(cors(corsOptions));
+// CORS
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:8000",
+      "https://cabzii.in",
+      "https://www.cabzii.in",
+      "https://admin.cabzii.in",
+      "https://www.admin.cabzii.in",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
-// Serve static files
+// Serve uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Health check
-app.get("/", (req, res) => res.json({ message: "API is running!" }));
+app.get("/", (req, res) => {
+  res.json({ message: "API is running!" });
+});
 
-// 4️⃣ Mount routes
-//admin routes
-
+// API Routes
 app.use("/api", adminRoute);
 app.use("/api/tour", tourRoutes);
-app.use("/api/tourpackagelist", tourPackageListRoutes)
+app.use("/api/tourpackagelist", tourPackageListRoutes);
 app.use("/api/vehicle", VehicleRoutes);
 app.use("/api/driver", DriverRoutes);
 app.use("/api/cab", cabRoutes);
 
-//client routes
 app.use("/api", clientRoute);
-//tour booking routes
 app.use("/api/tourbookings", TourBookingsRoute);
 
-
-// cabrental routes
-const cabRentalRoutes = require("./client/routes/cabRentalRoutes");
 app.use("/api/cab-rentals", cabRentalRoutes);
-
-// driver booking routes
-const driverBookingRoutes = require("./client/routes/DriverRoutes");
 app.use("/api/driver-bookings", driverBookingRoutes);
+app.use("/api/vehicle-bookings", vehicleBookingRoutes);
 
-// vehicle booking routes
-const vehicleBookingRoutes = require("./client/routes/vehicleBookingRoutes"); // Adjust path
+// 404
+app.use((req, res) => {
+  res.status(404).json({ error: "Not Found" });
+});
 
-// 404 handler
-app.use((req, res) => res.status(404).json({ error: "Not Found" }));
-
-// MongoDB connection & server start
+// MongoDB + Server start
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
-    app.listen(process.env.PORT || 8000, () => console.log("Server running"));
 
-    // Debug: ensure environment variables are loaded
-    // console.log("FACTOR2_API_KEY:", process.env.FACTOR2_API_KEY);
-    // console.log("FAST2SMS_API_KEY:", process.env.FAST2SMS_API_KEY);
+    const PORT = process.env.PORT || 8000;
+    app.listen(PORT, () => console.log("🚀 Server running on port " + PORT));
   })
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
